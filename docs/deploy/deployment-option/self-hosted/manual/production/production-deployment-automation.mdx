@@ -50,9 +50,13 @@ If you haven't yet installed Terraform, do so following the [Terraform documenta
     ```
 
 
-  4. Create the cluster: 
-   
-    `terraform apply` 
+  4. Create the cluster with `terraform apply`. 
+     - If you don't have a default VPC defined, then you need to set a VPC ID and subnet ID.
+     - If the public key path isn't the default `~/.ssh/id_rsa.pub`, then you need to set it. 
+    
+      ```bash
+      terraform apply -var='public_key_path=~/.ssh/id_rsa.pub' -var='subnet_id=<subnet-ID>' -var='vpc_id=<VPC-ID>'
+      ```
 
     The following example creates a three-broker cluster using i3.large instances:
 
