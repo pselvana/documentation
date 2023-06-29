@@ -129,7 +129,7 @@ If you haven't yet installed Terraform, do so following the [Terraform documenta
 5. Now you can install Redpanda either with Ansible or with the [Redpanda installation binary](../../production/production-deployment).
 
 :::note
-Non-AWS Terraform code is also included for [Azure](https://github.com/redpanda-data/deployment-automation/blob/main/azure/README.md) and [IBM Cloud](https://github.com/redpanda-data/deployment-automation/blob/main/ibm/README.md):
+Terraform code is also included for [Azure](https://github.com/redpanda-data/deployment-automation/blob/main/azure/README.md) and [IBM Cloud](https://github.com/redpanda-data/deployment-automation/blob/main/ibm/README.md):
 ```bash
 export AWS_ACCESS_KEY_ID=<your-key-ID>
 export AWS_SECRET_ACCESS_KEY=<your-secret-access-key>
@@ -274,7 +274,7 @@ ansible-playbook ansible/deploy-prometheus-grafana.yml \
 
 #### Build the cluster with TLS enabled
 
-Configure TLS with externally-provided and signed certificates (possibly through a corporate-provided Certmonger). Then run the `provision-tls-cluster` playbook, specifying the certificate locations on new hosts. You can either pass the variables in the command line or edit the file and pass them there. Consider whether you want public access to the Kafka API and Admin API endpoints. For example:
+Configure TLS with externally-provided and signed certificates (possibly through a corporate-provided cert-manager). Then run the `provision-tls-cluster` playbook, specifying the certificate locations on new hosts. You can either pass the variables in the command line or edit the file and pass them there. Consider whether you want public access to the Kafka API and Admin API endpoints. For example:
 
 ```bash
 ansible-playbook ansible/provision-tls-cluster.yml \
@@ -298,13 +298,13 @@ The playbook is designed to be idempotent, so it should be suitable for running 
 Because any changes made to properties outside of the playbook may be overwritten by this procedure, these settings should be incorporated as part of the provided `--extra-vars`. For example, `--extra-vars=enable_tls=true`.
 :::
 
-To enact an upgrade on a cluster, run the playbook with a specific target version. If the target version is higher than the currently installed version, then the cluster is upgraded and restarted automatically:
+To upgrade a cluster, run the playbook with a specific target version. If the target version is higher than the currently installed version, then the cluster is upgraded and restarted automatically:
 
 ```bash
 ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -i hosts.ini -e redpanda_version=22.3.10-1 
 ```
 
-By default, the playbook selects the latest version of the Redpanda packages, but an upgrade is only enacted if the `redpanda_install_status` variable is set to `latest`:
+By default, the playbook selects the latest version of the Redpanda packages, but an upgrade is only performed if the `redpanda_install_status` variable is set to `latest`:
 
 ```bash
 ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -i hosts.ini -e redpanda_install_status=latest 
