@@ -55,7 +55,7 @@ If you haven't yet installed Terraform, do so following the [Terraform documenta
      - If the public key path isn't the default `~/.ssh/id_rsa.pub`, then you need to set it. 
     
       ```bash
-      terraform apply -var='public_key_path=~/.ssh/id_rsa.pub' -var='subnet_id=<subnet-ID>' -var='vpc_id=<VPC-ID>'
+      terraform apply -var='public_key_path=~/.ssh/id_rsa.pub' -var='subnet_id=<subnet-id>' -var='vpc_id=<vpc-id>'
       ```
 
     The following example creates a three-broker cluster using i3.large instances:
@@ -131,7 +131,7 @@ If you haven't yet installed Terraform, do so following the [Terraform documenta
 :::note
 Terraform code is also included for [Azure](https://github.com/redpanda-data/deployment-automation/blob/main/azure/README.md) and [IBM Cloud](https://github.com/redpanda-data/deployment-automation/blob/main/ibm/README.md):
 ```bash
-export AWS_ACCESS_KEY_ID=<your-key-ID>
+export AWS_ACCESS_KEY_ID=<your-key-id>
 export AWS_SECRET_ACCESS_KEY=<your-secret-access-key>
 
 # Go to the cloud provider directory (aws, gcp, azure, or IBM)
@@ -232,7 +232,7 @@ You can pass the following variables as `-e var=value` when running Ansible:
 | `redpanda_admin_api_port` | `9644` |  |
 | `redpanda_kafka_port` | `9092` |  |
 | `redpanda_rpc_port` | `33145` |  |
-| `redpanda_use_staging_repo` | `false` | Enables access to unstable builds. |
+| `is_using_unstable` | `false` | Enables access to unstable builds. |
 | `redpanda_version` | `latest` | For example, 22.2.2-1 or 22.3.1~rc1-1. If this value is set, then the package is upgraded if the installed version is lower than what has been specified. |
 | `redpanda_rpk_opts` |  | Command line options to be passed to instances where `rpk` is used on the playbook; for example, superuser credentials can be specified as "--user myuser --password mypassword". |
 | `redpanda_install_status` | `present` | If `redpanda_version` is set to latest, changing `redpanda_install_status` to latest causes an upgrade; otherwise, the currently-installed version remains. |
@@ -257,7 +257,7 @@ ansible-playbook ansible/<playbook-name>.yml --private-key artifacts/testkey -e 
 ```
 
 :::note
-Adding whitespace breaks configuration merging. 
+Adding whitespace to the JSON breaks configuration merging. 
 :::
 
 Use `rpk` and standard Kafka tools to produce and consume from the Redpanda cluster.
@@ -276,7 +276,7 @@ ansible-playbook ansible/deploy-prometheus-grafana.yml \
 
 #### Build the cluster with TLS enabled
 
-Configure TLS with externally-provided and signed certificates (possibly through a corporate-provided cert-manager). Then run the `provision-tls-cluster` playbook, specifying the certificate locations on new hosts. You can either pass the variables in the command line or edit the file and pass them there. Consider whether you want public access to the Kafka API and Admin API endpoints. For example:
+Configure TLS with externally-provided and signed certificates. Then run the `provision-tls-cluster` playbook, specifying the certificate locations on new hosts. You can either pass the variables in the command line or edit the file and pass them there. Consider whether you want public access to the Kafka API and Admin API endpoints. For example:
 
 ```bash
 ansible-playbook ansible/provision-tls-cluster.yml \
@@ -307,7 +307,7 @@ To upgrade a cluster, run the playbook with a specific target version. If the ta
 ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -i hosts.ini -e redpanda_version=22.3.10-1 
 ```
 
-By default, the playbook selects the latest version of the Redpanda packages, but an upgrade is only performed if the `redpanda_install_status` variable is set to `latest`:
+By default the playbook selects the latest version of the Redpanda packages, but an upgrade is only performed if the `redpanda_install_status` variable is set to `latest`:
 
 ```bash
 ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -i hosts.ini -e redpanda_install_status=latest 
@@ -327,16 +327,6 @@ Similarly, you can put the `redpanda_rpk_opts` into a YAML file protected with A
 ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -i hosts.ini --extra-vars=redpanda_install_status=latest --extra-vars @vault-file.yml --ask-vault-pass
 ```
 
-##### Migrate to the AWS module
-
-Redpanda previously delivered AWS code as simple in-place Terraform code, but it is now converted to a module. To migrate from the old AWS code:
-
-1. Download the new configuration.
-2. Run the following:
-   
-```bash
-terraform state list | while read -r line ; do terraform state mv "$line" "module.redpanda-cluster.$line"; done
-```
 
 ### Troubleshooting
 
