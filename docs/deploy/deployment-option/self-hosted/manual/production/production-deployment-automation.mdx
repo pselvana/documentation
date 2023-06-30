@@ -1,10 +1,10 @@
 ---
-title: Automate Deployment for Production
+title: Automated Deployment Options
 ---
 
 <head>
-    <meta name="title" content="Automate Deployment for Production | Redpanda Docs"/>
-    <meta name="description" content="Automate Deployment for Production."/>
+    <meta name="title" content="Automated Deployment Options | Redpanda Docs"/>
+    <meta name="description" content="Deploy Redpanda using automation tools like Terraform and Ansible."/>
     <link rel="canonical" href="https://docs.redpanda.com/docs/deploy/deployment-option/self-hosted/manual/production/production-deployment-automation/" />
 </head>
 
@@ -13,29 +13,32 @@ import TabItem from '@theme/TabItem';
 
 If you use automation tools like Terraform and Ansible in your environment, you can use them to quickly provision a Redpanda cluster for production. Terraform can set up the infrastructure and output a properly-formatted `hosts.ini` file, and Ansible can use that `hosts.ini` file as input to install Redpanda. Or, you can supply your own hosts file (without using Terraform), but use Ansible to install Redpanda.
 
-## Use Terraform to set up infrastructure
+## Prerequisites
 
-If you haven't yet installed Terraform, do so following the [Terraform documentation](https://learn.hashicorp.com/tutorials/terraform/install-cli).
+1. Install Terraform following the [Terraform documentation](https://learn.hashicorp.com/tutorials/terraform/install-cli).
 
-1. Clone the [`deployment-automation` GitHub repository](https://github.com/redpanda-data/deployment-automation/):
+2. Install Ansible following the [Ansible documentation](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html). Depending on your system, you may also need to install Python packages, like SELinux or JMESPath.
+
+3. Clone the [`deployment-automation` GitHub repository](https://github.com/redpanda-data/deployment-automation/):
 
  ```bash
  git clone https://github.com/redpanda-data/deployment-automation.git
  ```
 
-3. Change into the directory:
+4. Change into the directory:
 
  ```bash
  cd deployment-automation
  ```
 
-1. Follow the instructions for your preferred cloud provider. The recommended [Terraform registry for Redpanda](https://registry.terraform.io/modules/redpanda-data/redpanda-cluster/aws/latest) deploys VMs on AWS EC2. To create an AWS Redpanda cluster, review the [default variables](https://github.com/redpanda-data/deployment-automation/blob/main/aws/main.tf) and make any edits necessary for your environment. 
-
+## Use Terraform to set up infrastructure
 
 <Tabs>
   <TabItem value="aws" label="AWS" default>
 
-  1. Within the `deployment-automation` folder, change into the `aws` directory:
+  The recommended [Terraform module for Redpanda](https://registry.terraform.io/modules/redpanda-data/redpanda-cluster/aws/latest) deploys VMs on AWS EC2. To create an AWS Redpanda cluster, review the [default variables](https://github.com/redpanda-data/deployment-automation/blob/main/aws/main.tf) and make any edits necessary for your environment. 
+
+  1. In the `deployment-automation` folder, change into the `aws` directory:
 
     ```bash
     cd aws
@@ -57,12 +60,6 @@ If you haven't yet installed Terraform, do so following the [Terraform documenta
       ```bash
       terraform apply -var='public_key_path=~/.ssh/id_rsa.pub' -var='subnet_id=<subnet-id>' -var='vpc_id=<vpc-id>'
       ```
-
-    The following example creates a three-broker cluster using i3.large instances:
-
-    ```bash
-    terraform apply -var="instance_type=i3.large"
-    ```
     
     Configuration options:
 
@@ -76,20 +73,20 @@ If you haven't yet installed Terraform, do so following the [Terraform documenta
     | `public_key_path` | Path to the public key of the keypair used to access the brokers. Default: `~/.ssh/id_rsa.pub` |
     | `distro` | Linux distribution to install. (This affects the `distro_` variables.) Default: `ubuntu-focal` |
     | `distro_ami` | AWS AMI to use for each available distribution. These must be changed according to the chosen AWS region. |
-    | `distro_ssh_user` | User used to ssh into the created EC2 instances. |
+    | `distro_ssh_user` | Username used to SSH into the created EC2 instances. |
 
 
   </TabItem>
 
   <TabItem value="gcp" label="GCP">
 
-  1. Within the `deployment-automation` folder, change into the `gcp` directory:
+  1. In the `deployment-automation` folder, change into the `gcp` directory:
 
     ```bash
     cd gcp
     ```
 
-  2. You need an existing subnet to deploy the VMs into. The subnet's attached firewall should allow inbound traffic on ports 22, 3000, 8082, 8888, 8889, 9090,  9092, 9644, and 33145. This module adds the `rp-node` tag to the deployed VMs, which can be used as the target tag for the firewall rule.
+  2. You need an existing subnet in which to deploy the VMs. The subnet's attached firewall should allow inbound traffic on ports 22, 3000, 8082, 8888, 8889, 9090,  9092, 9644, and 33145. This module adds the `rp-node` tag to the deployed VMs, which can be used as the target tag for the firewall rule.
 
   3. Initialize Terraform:
 
@@ -119,7 +116,7 @@ If you haven't yet installed Terraform, do so following the [Terraform documenta
     | `image` | The OS image running on the VMs. Default: `ubuntu-os-cloud/ubuntu-1804-lts` |
     | `machine_type` | The machine type. Default: `n2-standard-2`|
     | `public_key_path` | Path to the public key of the keypair used to access the brokers. |
-    | `ssh_user` | The ssh user. Must match the one in the public ssh key's comments. |
+    | `ssh_user` | The SSH user. Must match the one in the public SSH key's comments. |
 
 
   </TabItem>
@@ -128,23 +125,7 @@ If you haven't yet installed Terraform, do so following the [Terraform documenta
 
 5. Now you can install Redpanda either with Ansible or with the [Redpanda installation binary](../../production/production-deployment).
 
-:::note
-Terraform code is also included for [Azure](https://github.com/redpanda-data/deployment-automation/blob/main/azure/README.md) and [IBM Cloud](https://github.com/redpanda-data/deployment-automation/blob/main/ibm/README.md):
-```bash
-export AWS_ACCESS_KEY_ID=<your-key-id>
-export AWS_SECRET_ACCESS_KEY=<your-secret-access-key>
-
-# Go to the cloud provider directory (aws, gcp, azure, or IBM)
-cd azure
-terraform init
-terraform apply --auto-approve
-```
-:::
-
-
 ## Use Ansible to install Redpanda
-
-If you haven't yet installed Ansible, do so following the [Ansible documentation](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html). Depending on your system, you may also need to install Python packages, like SELinux or JMESPath.
 
 1. Set required Ansible variables:
 
@@ -154,19 +135,7 @@ If you haven't yet installed Ansible, do so following the [Ansible documentation
   export ANSIBLE_ROLES_PATH=${PWD}/artifacts/roles
   export ANSIBLE_INVENTORY=${PWD}/${CLOUD_PROVIDER}/hosts.ini
   ```
-
-1. Clone the [`deployment-automation` GitHub repository](https://github.com/redpanda-data/deployment-automation/):
-
-   ```bash
-   git clone https://github.com/redpanda-data/deployment-automation.git
-   ```
-
-1. Change into the directory:
-
-  ```bash
-  cd deployment-automation
-  ```
-
+  
 1. Install the roles required by Ansible:
 
   ```bash
@@ -177,7 +146,7 @@ If you haven't yet installed Ansible, do so following the [Ansible documentation
 
 If you used Terraform to deploy the instances, the `hosts.ini` is configured automatically in the [`artifacts`](https://github.com/redpanda-data/deployment-automation/tree/main/artifacts) directory. 
 
-If you didn't use Terraform, then you must manually update the [redpanda] section. When you open the file, you see something like the following:
+If you didn't use Terraform, then you must manually update the `[redpanda]` section. When you open the file, you see something like the following:
 
 ```ini
 [redpanda]
@@ -193,7 +162,7 @@ Under the `[redpanda]` section, replace the following:
 | Property      | Description |
 | ----------- | ----------- |
 | `ip` | The public IP address of the machine. |
-| `ansible_user` | The username for Ansible to use to ssh to the machine. |
+| `ansible_user` | The username for Ansible to use to SSH to the machine. |
 | `private_ip` | The private IP address of the machine. This could be the same as the public IP address. |
 | `id` | The node ID of the Redpanda instance. This must be unique for each host. |
 
@@ -201,11 +170,11 @@ You can add additional properties to configure features like rack awareness and 
 
 ### Run a playbook
 
-Use the [Ansible collection for Redpanda](https://galaxy.ansible.com/redpanda/cluster) to build a Redpanda cluster. The recommended Redpanda playbook enables TLS encryption and Tiered Storage. 
+Use the [Redpanda Ansible Collection](https://galaxy.ansible.com/redpanda/cluster) to build a Redpanda cluster. The recommended Redpanda playbook enables TLS encryption and Tiered Storage. 
 
 If you prefer, you can download the modules and required roles and create your own playbook. For example, if you want to handle your own data directory, you can toggle that part off, and Redpanda just makes sure the permissions are correct. If you want to generate your own security certificates, you can. 
 
-To run the recommended Redpanda playbook and have a fully-running Redpanda cluster in one command:
+To run the recommended Redpanda playbook and have a fully-running Redpanda cluster in one command, run:
 
  ```bash
  ansible-playbook --private-key <your-private-key> -i hosts.ini -v ansible/playbooks/provision-node.yml
@@ -217,39 +186,9 @@ To use your own playbook, replace `provision-node.yml` with your playbook name.
 If you use a playbook to create a cluster, also use it for any subsequent operations, like upgrades.
 :::
 
-#### Additional Redpanda values
-
-You can pass the following variables as `-e var=value` when running Ansible:
-
-| Property      | Default value | Description |
-| ----------- | ----------- | ----------- |
-| `redpanda_organization` | `redpanda-test` | Set this to identify your organization in the asset management system. |
-| `redpanda_cluster_id` | `redpanda` | Helps identify the cluster. |
-| `advertise_public_ips` | `false` | Configure Redpanda to advertise the node's public IPs for client communication instead of private IPs. This enables using the cluster from outside its subnet. Note: This is not recommended for production deployments, because it means that your nodes will be public. 
-| `grafana_admin_pass` | <your_secure_password> | Configure Grafana's admin user's password. |
-| `ephemeral_disk` | `false` | Enable filesystem check for attached disk. This is useful when using attached disks in instances with ephemeral OS disks like Azure L Series. This allows a filesystem repair at boot time and ensures that the drive is remounted automatically after a reboot. |
-| `redpanda_mode` | `production` | Enables hardware optimization. |
-| `redpanda_admin_api_port` | `9644` |  |
-| `redpanda_kafka_port` | `9092` |  |
-| `redpanda_rpc_port` | `33145` |  |
-| `is_using_unstable` | `false` | Enables access to unstable builds. | 
-| `redpanda_version` | `latest` | For example, 22.2.2-1 or 22.3.1~rc1-1. If this value is set, then the package is upgraded if the installed version is lower than what has been specified. |
-| `redpanda_rpk_opts` |  | Command line options to be passed to instances where `rpk` is used on the playbook; for example, superuser credentials can be specified as "--user myuser --password mypassword". |
-| `redpanda_install_status` | `present` | If `redpanda_version` is set to latest, changing `redpanda_install_status` to latest causes an upgrade; otherwise, the currently-installed version remains. |
-| `redpanda_data_directory` | `/var/lib/redpanda/data` | Path where Redpanda keeps its data. |
-| `redpanda_key_file` | `/etc/redpanda/certs/node.key` | TLS: Path to private key. |
-| `redpanda_cert_file` | `/etc/redpanda/certs/node.crt` | TLS: Path to signed certificate. |
-| `redpanda_truststore_file` | `/etc/redpanda/certs/truststore.pem` | TLS: Path to truststore. |
-| `tls` | `false` | Set to true to configure Redpanda to use TLS. This can be set on a per-node basis, although this may lead to errors configuring `rpk`. |
-| `skip_node` |	`false`	| Per-node config to prevent the Redpanda_broker role being applied to this specific node. Use carefully when adding new nodes to avoid existing nodes from being reconfigured. |
-| `restart_node` | `false` | Per-node config to prevent Redpanda brokers from being restarted after updating. Use with care: this can cause `rpk` to be reconfigured but the node not be restarted and therefore be in an inconsistent state. |
-| `rack` | `undefined` | Per-node config to enable rack awareness. Rack awareness is enabled cluster-wide if at least one node has the rack variable set. |
-| `tiered_storage_bucket_name` |  | Set bucket name to enable Tiered Storage. |
-| `aws_region` |  | The region to be used if Tiered Storage is enabled. |
-
 #### Custom configuration
 
-You can specify any available Redpanda configuration value (or set of values) by passing a JSON dictionary as an Ansible `extra-var`. These values are spliced with the calculated configuration and only override the values that you specify. Values must be unset manually with `rpk`. There are two sub-dictionaries you can specify: `redpanda.cluster` and `redpanda.node`. For more information, see [Cluster Configuration Properties](../../../../../../reference/cluster-properties) and [Node Configuration Properties](../../../../../../reference/node-properties). 
+You can specify any available Redpanda configuration value, or set of values, by passing a JSON dictionary as an Ansible `extra-var`. These values are spliced with the calculated configuration and only override the values that you specify. Values must be unset manually with `rpk`. There are two sub-dictionaries you can specify: `redpanda.cluster` and `redpanda.node`. For more information, see [Cluster Configuration Properties](../../../../../../reference/cluster-properties) and [Node Configuration Properties](../../../../../../reference/node-properties). 
 
 ```bash
 export JSONDATA='{"cluster":{"auto_create_topics_enabled":"true"},"node":{"developer_mode":"false"}}'
@@ -288,32 +227,44 @@ ansible-playbook ansible/provision-tls-cluster.yml \
 --extra-vars redpanda_truststore_file='<path-to-ca.crt-file>' 
 ```
 
-#### Add nodes to an existing cluster
+For testing, you could deploy a local CA to generate private keys and signed certificates:
 
-To add nodes to a cluster, you must add them to the hosts file and run the relevant playbook again. You can add `skip_node=true` to the existing hosts to avoid the playbooks being rerun on them.
+```bash
+ansible-playbook ansible/provision-tiered-storage-cluster.yml \
+-i hosts.ini \
+--private-key '<path-to-a-private-key-with-ssh-access-to-the-hosts>'
+```
+
+:::important
+Use a signed certificate from a valid CA for production environments.
+:::
+
+#### Add brokers to an existing cluster
+
+To add brokers to a cluster, you must add them to the hosts file and run the relevant playbook again. You can add `skip_node=true` to the existing hosts to avoid the playbooks being rerun on them.
 
 #### Upgrade a cluster
 
-The playbook is designed to be idempotent, so it should be suitable for running as part of a CI/CD pipeline or through Ansible Tower. Upgrade support is built in, and the playbook is capable of upgrading the packages and then performing a rolling upgrade across the cluster.
+The playbook is designed to be idempotent, so it should be suitable for running as part of a CI/CD pipeline or through Ansible Tower. The playbook upgrades the packages and then performs a [rolling upgrade](../../../../../../manage/cluster-maintenance/rolling-upgrade/#perform-a-rolling-upgrade) across the cluster.
 
 :::note notes
-- Because any changes made to properties outside of the playbook may be overwritten by this procedure, these settings should be incorporated as part of the provided `--extra-vars`. For example, `--extra-vars=enable_tls=true`. See [Custom configuration](#custom-configuration).
+- Because edits made to properties outside of the playbook may be overwritten by this procedure, these settings should be incorporated as `--extra-vars`. For example, `--extra-vars=enable_tls=true`. See [Custom configuration](#custom-configuration).
 - Test that your upgrade path is safe before using it in production.
 :::
 
-To upgrade a cluster, run the playbook with a specific target version. If the target version is higher than the currently installed version, then the cluster is upgraded and restarted automatically:
+To upgrade a cluster, run the playbook with a specific target version. If the target version is higher than the currently-installed version, then the cluster is upgraded and restarted automatically:
 
 ```bash
 ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -i hosts.ini -e redpanda_version=22.3.10-1 
 ```
 
-By default the playbook selects the latest version of the Redpanda packages, but an upgrade is only performed if the `redpanda_install_status` variable is set to `latest`:
+By default, the playbook selects the latest version of the Redpanda packages, but an upgrade is only performed if the `redpanda_install_status` variable is set to `latest`:
 
 ```bash
 ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -i hosts.ini -e redpanda_install_status=latest 
 ```
 
-It's possible to upgrade clusters where SASL authentication has been turned on. For this, you need to additionally specify the `redpanda_rpk_opts` variable to include to username and password or a superuser or appropriately privileged user. For example:
+You can upgrade clusters with SASL authentication by specifying the `redpanda_rpk_opts` variable to include the username and password of a superuser or appropriately-privileged user. For example:
 
 ```bash
 ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -i hosts.ini --extra-vars=redpanda_install_status=latest --extra-vars "{
@@ -327,6 +278,35 @@ Similarly, you can put the `redpanda_rpk_opts` into a YAML file protected with A
 ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -i hosts.ini --extra-vars=redpanda_install_status=latest --extra-vars @vault-file.yml --ask-vault-pass
 ```
 
+#### Redpanda Ansible Collection values
+
+You can pass the following variables as `-e var=value` when running Ansible:
+
+| Property      | Default value | Description |
+| ----------- | ----------- | ----------- |
+| `redpanda_organization` | `redpanda-test` | Set this to identify your organization in the asset management system. |
+| `redpanda_cluster_id` | `redpanda` | Helps identify the cluster. |
+| `advertise_public_ips` | `false` | Configure Redpanda to advertise the broker's public IPs for client communication instead of private IPs. This enables using the cluster from outside its subnet. Note: This is not recommended for production deployments, because your brokers will be public. 
+| `grafana_admin_pass` | <your_secure_password> | Configure Grafana's admin user's password. |
+| `ephemeral_disk` | `false` | Enable filesystem check for attached disk. This is useful when using attached disks in instances with ephemeral OS disks like Azure L Series. This allows a filesystem repair at boot time and ensures that the drive is remounted automatically after a reboot. |
+| `redpanda_mode` | `production` | Enables hardware optimization. |
+| `redpanda_admin_api_port` | `9644` |  |
+| `redpanda_kafka_port` | `9092` |  |
+| `redpanda_rpc_port` | `33145` |  |
+| `is_using_unstable` | `false` | Enables access to unstable builds. | 
+| `redpanda_version` | `latest` | For example, 22.2.2-1 or 22.3.1~rc1-1. If this value is set, then the package is upgraded if the installed version is lower than what has been specified. |
+| `redpanda_rpk_opts` |  | Command line options to be passed to instances where `rpk` is used on the playbook; for example, superuser credentials can be specified as `--user myuser --password mypassword`. |
+| `redpanda_install_status` | `present` | If `redpanda_version` is set to latest, changing `redpanda_install_status` to latest causes an upgrade; otherwise, the currently-installed version remains. |
+| `redpanda_data_directory` | `/var/lib/redpanda/data` | Path where Redpanda keeps its data. |
+| `redpanda_key_file` | `/etc/redpanda/certs/node.key` | TLS: Path to private key. |
+| `redpanda_cert_file` | `/etc/redpanda/certs/node.crt` | TLS: Path to signed certificate. |
+| `redpanda_truststore_file` | `/etc/redpanda/certs/truststore.pem` | TLS: Path to truststore. |
+| `tls` | `false` | Set to true to configure Redpanda to use TLS. This can be set on each broker, although this may lead to errors configuring `rpk`. |
+| `skip_node` |	`false`	| Node configuration to prevent the redpanda_broker role being applied to this specific broker. Use carefully when adding new brokers to avoid existing brokers from being reconfigured. |
+| `restart_node` | `false` | Node configuration to prevent Redpanda brokers from being restarted after updating. Use with care: this can cause `rpk` to be reconfigured but the broker not be restarted and therefore be in an inconsistent state. |
+| `rack` | `undefined` | Node configuration to enable rack awareness. Rack awareness is enabled cluster-wide if at least one broker has the rack variable set. |
+| `tiered_storage_bucket_name` |  | Set bucket name to enable Tiered Storage. |
+| `aws_region` |  | The region to be used if Tiered Storage is enabled. |
 
 ### Troubleshooting
 
