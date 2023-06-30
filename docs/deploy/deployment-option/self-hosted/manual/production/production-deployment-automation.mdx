@@ -287,7 +287,7 @@ You can pass the following variables as `-e var=value` when running Ansible:
 | `redpanda_organization` | `redpanda-test` | Set this to identify your organization in the asset management system. |
 | `redpanda_cluster_id` | `redpanda` | Helps identify the cluster. |
 | `advertise_public_ips` | `false` | Configure Redpanda to advertise the broker's public IPs for client communication instead of private IPs. This enables using the cluster from outside its subnet. Note: This is not recommended for production deployments, because your brokers will be public. 
-| `grafana_admin_pass` | <your_secure_password> | Configure Grafana's admin user's password. |
+| `grafana_admin_pass` | `<your-secure-password>` | Configure Grafana's admin user's password. |
 | `ephemeral_disk` | `false` | Enable filesystem check for attached disk. This is useful when using attached disks in instances with ephemeral OS disks like Azure L Series. This allows a filesystem repair at boot time and ensures that the drive is remounted automatically after a reboot. |
 | `redpanda_mode` | `production` | Enables hardware optimization. |
 | `redpanda_admin_api_port` | `9644` |  |
