@@ -61,7 +61,7 @@ If you use automation tools like Terraform and Ansible in your environment, you 
       terraform apply -var='public_key_path=~/.ssh/id_rsa.pub' -var='subnet_id=<subnet-id>' -var='vpc_id=<vpc-id>'
       ```
     
-    Configuration options:
+    Configuration options (for the full list, see the [Terraform module](https://registry.terraform.io/modules/redpanda-data/redpanda-cluster/aws/latest)):
 
     | Property      | Description |
     | ----------- | ----------- |
@@ -104,7 +104,7 @@ If you use automation tools like Terraform and Ansible in your environment, you 
     terraform apply -var nodes=3 -var subnet=redpanda-cluster-subnet -var public_key_path=~/.ssh/id_rsa.pub -var ssh_user=$USER
     ```
    
-    Configuration options:
+    Configuration options (for the full list, see the [Terraform module](https://registry.terraform.io/modules/redpanda-data/redpanda-cluster/aws/latest)):
    
     | Property      | Description |
     | ----------- | ----------- |
@@ -122,6 +122,7 @@ If you use automation tools like Terraform and Ansible in your environment, you 
   </TabItem>
 
 </Tabs>
+
 
 5. Now you can install Redpanda either with Ansible or with the [Redpanda installation binary](../../production/production-deployment).
 
@@ -177,13 +178,13 @@ If you prefer, you can download the modules and required roles and create your o
 To run the recommended Redpanda playbook and have a fully-running Redpanda cluster in one command, run:
 
  ```bash
- ansible-playbook --private-key <your-private-key> -i hosts.ini -v ansible/playbooks/provision-node.yml
+ ansible-playbook --private-key <your-private-key> -i hosts.ini -v ansible/playbooks/provision-basic-cluster.yml
  ```
 
-To use your own playbook, replace `provision-node.yml` with your playbook name. 
+To use your own playbook, replace `provision-basic-cluster.yml` with your playbook name. 
 
 :::note
-If you use a playbook to create a cluster, also use it for any subsequent operations, like upgrades.
+When you use a playbook to create a cluster, you should also use the playbook for subsequent operations, like upgrades.
 :::
 
 #### Custom configuration
@@ -227,6 +228,16 @@ ansible-playbook ansible/provision-tls-cluster.yml \
 --extra-vars redpanda_truststore_file='<path-to-ca.crt-file>' 
 ```
 
+It is important to use a signed certificate from a valid CA for production environments. The playbook uses locally-signed certificates that are not recommended for production use. Provide a valid certificate using these variables:
+
+```bash
+redpanda_certs_dir: /etc/redpanda/certs
+redpanda_csr_file: "{{ redpanda_certs_dir }}/node.csr"
+redpanda_key_file: "{{ redpanda_certs_dir }}/node.key"
+redpanda_cert_file: "{{ redpanda_certs_dir }}/node.crt"
+redpanda_truststore_file: "{{ redpanda_certs_dir }}/truststore.pem"
+```
+
 For testing, you could deploy a local CA to generate private keys and signed certificates:
 
 ```bash
@@ -235,9 +246,6 @@ ansible-playbook ansible/provision-tiered-storage-cluster.yml \
 --private-key '<path-to-a-private-key-with-ssh-access-to-the-hosts>'
 ```
 
-:::important
-Use a signed certificate from a valid CA for production environments.
-:::
 
 #### Add brokers to an existing cluster
 
@@ -248,7 +256,7 @@ To add brokers to a cluster, you must add them to the hosts file and run the rel
 The playbook is designed to be idempotent, so it should be suitable for running as part of a CI/CD pipeline or through Ansible Tower. The playbook upgrades the packages and then performs a [rolling upgrade](../../../../../../manage/cluster-maintenance/rolling-upgrade/#perform-a-rolling-upgrade) across the cluster.
 
 :::note notes
-- Because edits made to properties outside of the playbook may be overwritten by this procedure, these settings should be incorporated as `--extra-vars`. For example, `--extra-vars=enable_tls=true`. See [Custom configuration](#custom-configuration).
+- Because edits made to properties outside of the playbook may be overwritten by this procedure, incorporate variables into your `hosts.ini` file.
 - Test that your upgrade path is safe before using it in production.
 :::
 
