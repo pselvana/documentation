@@ -262,7 +262,7 @@ module.exports = {
                     },
                     {
                       type: "doc",
-                      label: "Automate Deployment for Production",
+                      label: "Automated Deployment Options",
                       id: "deploy/deployment-option/self-hosted/manual/production/production-deployment-automation",
                     },
                     {
