@@ -232,7 +232,7 @@ You can pass the following variables as `-e var=value` when running Ansible:
 | `redpanda_admin_api_port` | `9644` |  |
 | `redpanda_kafka_port` | `9092` |  |
 | `redpanda_rpc_port` | `33145` |  |
-| `is_using_unstable` | `false` | Enables access to unstable builds. |
+| `is_using_unstable` | `false` | Enables access to unstable builds. | 
 | `redpanda_version` | `latest` | For example, 22.2.2-1 or 22.3.1~rc1-1. If this value is set, then the package is upgraded if the installed version is lower than what has been specified. |
 | `redpanda_rpk_opts` |  | Command line options to be passed to instances where `rpk` is used on the playbook; for example, superuser credentials can be specified as "--user myuser --password mypassword". |
 | `redpanda_install_status` | `present` | If `redpanda_version` is set to latest, changing `redpanda_install_status` to latest causes an upgrade; otherwise, the currently-installed version remains. |
