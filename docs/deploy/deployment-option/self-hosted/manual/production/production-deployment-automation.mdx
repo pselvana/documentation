@@ -311,7 +311,7 @@ You can pass the following variables as `-e var=value` when running Ansible:
 | `redpanda_truststore_file` | `/etc/redpanda/certs/truststore.pem` | TLS: Path to truststore. |
 | `tls` | `false` | Set to true to configure Redpanda to use TLS. This can be set on each broker, although this may lead to errors configuring `rpk`. |
 | `skip_node` |	`false`	| Node configuration to prevent the redpanda_broker role being applied to this specific broker. Use carefully when adding new brokers to avoid existing brokers from being reconfigured. |
-| `restart_node` | `false` | Node configuration to prevent Redpanda brokers from being restarted after updating. Use with care: this can cause `rpk` to be reconfigured but the broker not be restarted and therefore be in an inconsistent state. |
+| `restart_node` | `false` | Node configuration to prevent Redpanda brokers from being restarted after updating. Use with care: this can cause `rpk` to be reconfigured but the broker is not restarted and therefore is in an inconsistent state. |
 | `rack` | `undefined` | Node configuration to enable rack awareness. Rack awareness is enabled cluster-wide if at least one broker has the rack variable set. |
 | `tiered_storage_bucket_name` |  | Set bucket name to enable Tiered Storage. |
 | `aws_region` |  | The region to be used if Tiered Storage is enabled. |
