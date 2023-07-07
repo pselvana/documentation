@@ -11,13 +11,17 @@ title: Automated Deployment Options
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-If you use automation tools like Terraform and Ansible in your environment, you can use them to quickly provision a Redpanda cluster for production. Terraform can set up the infrastructure and output a properly-formatted `hosts.ini` file, and Ansible can use that `hosts.ini` file as input to install Redpanda. Or, you can supply your own hosts file (without using Terraform), but use Ansible to install Redpanda.
+If you use automation tools like Terraform and Ansible in your environment, you can use them to quickly provision a Redpanda cluster. Terraform can set up the infrastructure and output a properly-formatted `hosts.ini` file, and Ansible can use that `hosts.ini` file as input to install Redpanda. 
+
+If you already have an infrastructure provisioning framework, you can supply your own hosts file (without using Terraform), and you can use Ansible to install Redpanda. 
+
+This automated deployment provides a production-usable way to deploy and maintain a cluster. For unique or complex or unique configurations, you can work directly with the Ansible and Terraform modules to integrate them into your environment.
 
 ## Prerequisites
 
 1. Install Terraform following the [Terraform documentation](https://learn.hashicorp.com/tutorials/terraform/install-cli).
 
-2. Install Ansible following the [Ansible documentation](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html). Depending on your system, you may also need to install Python packages, like SELinux or JMESPath.
+2. Install Ansible following the [Ansible documentation](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html). Different operating systems may have specific Ansible dependencies.
 
 3. Clone the [`deployment-automation` GitHub repository](https://github.com/redpanda-data/deployment-automation/):
 
@@ -124,11 +128,9 @@ If you use automation tools like Terraform and Ansible in your environment, you 
 </Tabs>
 
 
-5. Now you can install Redpanda either with Ansible or with the [Redpanda installation binary](../../production/production-deployment).
-
 ## Use Ansible to install Redpanda
 
-1. Set required Ansible variables:
+  1. From the [`deployment-automation`](https://github.com/redpanda-data/deployment-automation/) folder, set the required Ansible variables:
 
   ```bash
   export CLOUD_PROVIDER=<cloud-provider>
@@ -144,6 +146,10 @@ If you use automation tools like Terraform and Ansible in your environment, you 
   ```
 
 ### Configure a hosts file
+
+:::important
+Redpanda recommends incorporating variables into your `hosts.ini` file for every host. Edits made to properties outside of the playbook may be overwritten.
+:::
 
 If you used Terraform to deploy the instances, the `hosts.ini` is configured automatically in the [`artifacts`](https://github.com/redpanda-data/deployment-automation/tree/main/artifacts) directory. 
 
@@ -167,7 +173,9 @@ Under the `[redpanda]` section, replace the following:
 | `private_ip` | The private IP address of the machine. This could be the same as the public IP address. |
 | `id` | The node ID of the Redpanda instance. This must be unique for each host. |
 
-You can add additional properties to configure features like rack awareness and Tiered Storage. The `[monitor]` section is only relevant if you have Prometheus and Grafana installed on a given host. If you don't want to have this deployed, then remove the `[monitor]` section.
+You can add additional properties to configure features like rack awareness and Tiered Storage. 
+
+The `[monitor]` section is only required if you want the Redpanda Ansible playbooks to install and configure a basic Prometheus and Grafana setup for observability. If you have a centralized monitoring setup or if you don't require monitoring, then remove this section.
 
 ### Run a playbook
 
@@ -175,7 +183,7 @@ Use the [Ansible Collection for Redpanda](https://galaxy.ansible.com/redpanda/cl
 
 If you prefer, you can download the modules and required roles and create your own playbook. For example, if you want to handle your own data directory, you can toggle that part off, and Redpanda ensures that the permissions are correct. If you want to generate your own security certificates, you can. 
 
-To run the recommended Redpanda playbook and have a fully-running Redpanda cluster in one command, run:
+To install and start a Redpanda cluster in one command with the Redpanda playbook, run:
 
  ```bash
  ansible-playbook --private-key <your-private-key> -i hosts.ini -v ansible/playbooks/provision-basic-cluster.yml
@@ -202,15 +210,14 @@ Adding whitespace to the JSON breaks configuration merging.
 
 Use `rpk` and standard Kafka tools to produce and consume from the Redpanda cluster.
 
-#### Configure Grafana
+#### Configure Prometheus and Grafana
 
-To deploy a Grafana node, you must have a `[monitor]` section in your hosts file. The Grafana URL is `http://<grafana-host>:3000/login`.
+Include a `[monitor]` section in your hosts file if you want the playbook to install and configure a basic Prometheus and Grafana setup for observability. Redpanda emits Prometheus metrics that can be scrapped with a central collector. If you already have a centralized monitoring setup or if you don't require monitoring, then this is unnecessary.
 
 To run the `deploy-prometheus-grafana.yml` playbook:
 
 ```bash
 ansible-playbook ansible/deploy-prometheus-grafana.yml \
--i hosts.ini \
 --private-key '<path-to-a-private-key-with-ssh-access-to-the-hosts>'
 ```
 
@@ -220,7 +227,6 @@ Configure TLS with externally-provided and signed certificates. Then run the `pr
 
 ```bash
 ansible-playbook ansible/provision-tls-cluster.yml \
--i hosts.ini \
 --private-key '<path-to-a-private-key-with-ssh-access-to-the-hosts>' \
 --extra-vars create_demo_certs=false \
 --extra-vars advertise_public_ips=false \ 
@@ -242,7 +248,6 @@ For testing, you could deploy a local CA to generate private keys and signed cer
 
 ```bash
 ansible-playbook ansible/provision-tiered-storage-cluster.yml \
--i hosts.ini \
 --private-key '<path-to-a-private-key-with-ssh-access-to-the-hosts>'
 ```
 
@@ -253,37 +258,31 @@ To add brokers to a cluster, you must add them to the hosts file and run the rel
 
 #### Upgrade a cluster
 
-The playbook is designed to be idempotent, so it should be suitable for running as part of a CI/CD pipeline or through Ansible Tower. The playbook upgrades the packages and then performs a [rolling upgrade](../../../../../../manage/cluster-maintenance/rolling-upgrade/#perform-a-rolling-upgrade) across the cluster.
+The playbook is designed to be idempotent, so it should be suitable for running as part of a CI/CD pipeline or through Ansible Tower. The playbook upgrades the packages and then performs a rolling upgrade, where one broker at a time is upgraded and safely restarted. For all upgrade requirements and recommendations, see [Upgrade Redpanda](../../../../../../manage/cluster-maintenance/rolling-upgrade). It is important to test that your upgrade path is safe before using it in production. 
 
-:::note notes
-- Because edits made to properties outside of the playbook may be overwritten by this procedure, incorporate variables into your `hosts.ini` file.
-- Test that your upgrade path is safe before using it in production.
-:::
-
-To upgrade a cluster, run the playbook with a specific target version. If the target version is higher than the currently-installed version, then the cluster is upgraded and restarted automatically:
+To upgrade a cluster, run the playbook with a specific target version: 
 
 ```bash
-ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -i hosts.ini -e redpanda_version=22.3.10-1 
+ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -e redpanda_version=22.3.10-1 
 ```
 
 By default, the playbook selects the latest version of the Redpanda packages, but an upgrade is only performed if the `redpanda_install_status` variable is set to `latest`:
 
 ```bash
-ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -i hosts.ini -e redpanda_install_status=latest 
+ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -e redpanda_install_status=latest 
 ```
 
-You can upgrade clusters with SASL authentication by specifying the `redpanda_rpk_opts` variable to include the username and password of a superuser or appropriately-privileged user. For example:
+To upgrade clusters with SASL authentication:
 
 ```bash
-ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -i hosts.ini --extra-vars=redpanda_install_status=latest --extra-vars "{
-\"redpanda_rpk_opts\": \"--user ${MY_USER} --password ${MY_USER_PASSWORD}\"
-}"
+export JSONDATA='{"cluster":{"auto_create_topics_enabled":"true"},"node":{"developer_mode":"false"}}'
+ansible-playbook ansible/<playbook-name>.yml --private-key artifacts/testkey -e redpanda="${JSONDATA}"
 ```
 
 Similarly, you can put the `redpanda_rpk_opts` into a YAML file protected with Ansible vault.
 
 ```bash
-ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml -i hosts.ini --extra-vars=redpanda_install_status=latest --extra-vars @vault-file.yml --ask-vault-pass
+ansible-playbook --private-key ~/.ssh/id_rsa ansible/<playbook-name>.yml --extra-vars=redpanda_install_status=latest --extra-vars @vault-file.yml --ask-vault-pass
 ```
 
 #### Redpanda Ansible Collection values
