@@ -1,5 +1,5 @@
 ---
-title: Automated Deployment Options
+title: Automated Deployment
 ---
 
 <head>
@@ -15,7 +15,7 @@ If you use automation tools like Terraform and Ansible in your environment, you 
 
 If you already have an infrastructure provisioning framework, you can supply your own hosts file (without using Terraform), and you can use Ansible to install Redpanda. 
 
-This automated deployment provides a production-usable way to deploy and maintain a cluster. For unique or complex or unique configurations, you can work directly with the Ansible and Terraform modules to integrate them into your environment.
+This recommended automated deployment provides a production-usable way to deploy and maintain a cluster. For unique configurations, you can work directly with the Ansible and Terraform modules to integrate them into your environment.
 
 ## Prerequisites
 
@@ -40,7 +40,7 @@ This automated deployment provides a production-usable way to deploy and maintai
 <Tabs>
   <TabItem value="aws" label="AWS" default>
 
-  The recommended [Terraform module for Redpanda](https://registry.terraform.io/modules/redpanda-data/redpanda-cluster/aws/latest) deploys VMs on AWS EC2. To create an AWS Redpanda cluster, review the [default variables](https://github.com/redpanda-data/deployment-automation/blob/main/aws/main.tf) and make any edits necessary for your environment. 
+  The recommended [Terraform module for Redpanda](https://registry.terraform.io/modules/redpanda-data/redpanda-cluster/aws/latest) deploys virtual machines on AWS EC2. To create an AWS Redpanda cluster, review the [default variables](https://github.com/redpanda-data/deployment-automation/blob/main/aws/main.tf) and make any edits necessary for your environment. 
 
   1. In the `deployment-automation` folder, change into the `aws` directory:
 
@@ -57,27 +57,69 @@ This automated deployment provides a production-usable way to deploy and maintai
     ```
 
 
-  4. Create the cluster with `terraform apply`. 
-     - If you don't have a default VPC defined, then you need to set a VPC ID and subnet ID.
-     - If the public key path isn't the default `~/.ssh/id_rsa.pub`, then you need to set it. 
+  4. Create the cluster with `terraform apply`:
     
       ```bash
       terraform apply -var='public_key_path=~/.ssh/id_rsa.pub' -var='subnet_id=<subnet-id>' -var='vpc_id=<vpc-id>'
       ```
+
+      - Terraform configures `public_key_path` on the brokers to remotely connect with SSH. If the public key path isn't the default `~/.ssh/id_rsa.pub`, then you need to set it. 
+      - If you don't have a default VPC defined, then you need to set `subnet_id` and `vpc_id`.
     
     Configuration options (for the full list, see the [Terraform module](https://registry.terraform.io/modules/redpanda-data/redpanda-cluster/aws/latest)):
 
     | Property      | Description |
     | ----------- | ----------- |
-    | `aws_region` | The AWS region to use for deploying the infrastructure. Default: `us-west-2` |
-    | `nodes` | The number of brokers to base the cluster on. Default: `3` |
+    | `aws_region` | The AWS region to use to deploy the infrastructure. Default: `us-west-2` |
+    | `nodes` | The number of brokers in the cluster. Default: `3` |
     | `enable_monitoring` | Creates a Prometheus/Grafana instance for monitoring the cluster. Default: `true` |
     | `instance_type` | The instance type on which Redpanda is deployed. Default: `i3.8xlarge` |
     | `prometheus_instance_type` | The instance type on which Prometheus and Grafana are deployed. Default: `c5.2xlarge` |
     | `public_key_path` | Path to the public key of the keypair used to access the brokers. Default: `~/.ssh/id_rsa.pub` |
     | `distro` | Linux distribution to install. (This affects the `distro_` variables.) Default: `ubuntu-focal` |
-    | `distro_ami` | AWS AMI to use for each available distribution. These must be changed according to the chosen AWS region. |
+    | `distro_ami` | AWS AMI for each distribution. It must be changed according to the AWS region. <br/>- This overrides `distro`, which automatically chooses the latest AMI for the operating system and region. Set `distro_ami` if you need a specific local AMI. <br/>-If you set `distro_ami`, you must also set `distro_ssh_user`.|
     | `distro_ssh_user` | Username used to SSH into the created EC2 instances. |
+
+   :::note
+   For acceptable `distro` names:
+
+   ```bash
+   data "aws_ami" "ami" {
+     most_recent = true
+
+     filter {
+       name   = "name"
+       values = [
+         "ubuntu/images/hvm-ssd/ubuntu-*-amd64-server-*",
+         "ubuntu/images/hvm-ssd/ubuntu-*-arm64-server-*",
+         "Fedora-Cloud-Base-*.x86_64-hvm-us-west-2-gp2-0",
+         "debian-*-amd64-*",
+         "debian-*-hvm-x86_64-gp2-*'",
+         "amzn2-ami-hvm-2.0.*-x86_64-gp2",
+         "RHEL*HVM-*-x86_64*Hourly2-GP2"
+       ]
+     }
+
+     filter {
+       name   = "architecture"
+       values = [var.machine_architecture]
+     }
+
+     filter {
+       name   = "name"
+       values = ["*${var.distro}*"]
+     }
+
+     filter {
+       name   = "virtualization-type"
+       values = ["hvm"]
+     }
+
+     owners = ["099720109477", "125523088429", "136693071363", "137112412989", "309956199498"]
+     # Canonical, Fedora, Debian (new), Amazon, RedHat
+   }
+   ```
+   :::
 
 
   </TabItem>
@@ -90,7 +132,7 @@ This automated deployment provides a production-usable way to deploy and maintai
     cd gcp
     ```
 
-  2. You need an existing subnet in which to deploy the VMs. The subnet's attached firewall should allow inbound traffic on ports 22, 3000, 8082, 8888, 8889, 9090,  9092, 9644, and 33145. This module adds the `rp-node` tag to the deployed VMs, which can be used as the target tag for the firewall rule.
+  2. You need an existing subnet in which to deploy the virtual machines (VMs). The subnet's attached firewall should allow inbound traffic on ports 22, 3000, 8082, 8888, 8889, 9090,  9092, 9644, and 33145. This module adds the `rp-node` tag to the deployed VMs, which can be used as the target tag for the firewall rule.
 
   3. Initialize Terraform:
 
@@ -112,12 +154,12 @@ This automated deployment provides a production-usable way to deploy and maintai
    
     | Property      | Description |
     | ----------- | ----------- |
-    | `region` | The region to use for deploying the infrastructure. Default: `us-west1` |
+    | `region` | The GCP region to use to deploy the infrastructure. Default: `us-west1` |
     | `zone` | The region's zone to deploy the infrastructure. Default: `a` |
     | `subnet` | The name of an existing subnet to deploy the infrastructure. |
-    | `nodes` | The number of brokers to base the cluster on. Keep in mind that one broker is used as a monitoring broker. Default: `1`|
+    | `nodes` | The number of brokers in the cluster. Keep in mind that one broker is used as a monitoring broker. Default: `1`|
     | `disks` | The number of local disks to deploy on each machine. Default = `1`|
-    | `image` | The OS image running on the VMs. Default: `ubuntu-os-cloud/ubuntu-1804-lts` |
+    | `image` | The operating system image running on the VMs. Default: `ubuntu-os-cloud/ubuntu-1804-lts` |
     | `machine_type` | The machine type. Default: `n2-standard-2`|
     | `public_key_path` | Path to the public key of the keypair used to access the brokers. |
     | `ssh_user` | The SSH user. Must match the one in the public SSH key's comments. |
@@ -133,7 +175,7 @@ This automated deployment provides a production-usable way to deploy and maintai
   1. From the [`deployment-automation`](https://github.com/redpanda-data/deployment-automation/) folder, set the required Ansible variables:
 
   ```bash
-  export CLOUD_PROVIDER=<cloud-provider>
+  export CLOUD_PROVIDER=<aws-or-gcp>
   export ANSIBLE_COLLECTIONS_PATHS=${PWD}/artifacts/collections
   export ANSIBLE_ROLES_PATH=${PWD}/artifacts/roles
   export ANSIBLE_INVENTORY=${PWD}/${CLOUD_PROVIDER}/hosts.ini
@@ -175,7 +217,7 @@ Under the `[redpanda]` section, replace the following:
 
 You can add additional properties to configure features like rack awareness and Tiered Storage. 
 
-The `[monitor]` section is only required if you want the Redpanda Ansible playbooks to install and configure a basic Prometheus and Grafana setup for observability. If you have a centralized monitoring setup or if you don't require monitoring, then remove this section.
+The `[monitor]` section is only required if you want the playbook to install and configure a basic Prometheus and Grafana setup for observability. If you have a centralized monitoring setup or if you don't require monitoring, then remove this section.
 
 ### Run a playbook
 
@@ -189,10 +231,10 @@ To install and start a Redpanda cluster in one command with the Redpanda playboo
  ansible-playbook --private-key <your-private-key> -i hosts.ini -v ansible/playbooks/provision-basic-cluster.yml
  ```
 
-To use your own playbook, replace `provision-basic-cluster.yml` with your playbook name. 
-
-:::note
-When you use a playbook to create a cluster, you should also use the playbook for subsequent operations, like upgrades.
+:::note notes
+- The private key corresponds to the public key in the `distro_user` SSH configuration.
+- To use your own playbook, replace `provision-basic-cluster.yml` with your playbook name. 
+- When you use a playbook to create a cluster, you should also use the playbook for subsequent operations, like upgrades. The Ansible modules safely handle rolling upgrades, but you must comply with [Redpanda version path requirements](../../../../../../manage/cluster-maintenance/rolling-upgrade).
 :::
 
 #### Custom configuration
@@ -292,32 +334,32 @@ You can pass the following variables as `-e var=value` when running Ansible:
 | Property      | Default value | Description |
 | ----------- | ----------- | ----------- |
 | `redpanda_organization` | `redpanda-test` | Set this to identify your organization in the asset management system. |
-| `redpanda_cluster_id` | `redpanda` | Helps identify the cluster. |
-| `advertise_public_ips` | `false` | Configure Redpanda to advertise the broker's public IPs for client communication instead of private IPs. This enables using the cluster from outside its subnet. Note: This is not recommended for production deployments, because your brokers will be public. 
-| `grafana_admin_pass` | `<your-secure-password>` | Configure Grafana's admin user's password. |
-| `ephemeral_disk` | `false` | Enable filesystem check for attached disk. This is useful when using attached disks in instances with ephemeral OS disks like Azure L Series. This allows a filesystem repair at boot time and ensures that the drive is remounted automatically after a reboot. |
+| `redpanda_cluster_id` | `redpanda` | This helps identify the cluster. |
+| `advertise_public_ips` | `false` | Configure Redpanda to advertise the broker's public IPs for client communication instead of private IPs. This enables using the cluster from outside its subnet. <br/>Note: This is not recommended for production deployments, because your brokers will be public. 
+| `grafana_admin_pass` | `<your-secure-password>` | Grafana admin user's password. |
+| `ephemeral_disk` | `false` | Enable filesystem check for attached disk. <br/>This is useful when using attached disks in instances with ephemeral operating system disks like Azure L Series. This allows a filesystem repair at boot time and ensures that the drive is remounted automatically after a reboot. |
 | `redpanda_mode` | `production` | Enables hardware optimization. |
 | `redpanda_admin_api_port` | `9644` |  |
 | `redpanda_kafka_port` | `9092` |  |
 | `redpanda_rpc_port` | `33145` |  |
 | `is_using_unstable` | `false` | Enables access to unstable builds. | 
-| `redpanda_version` | `latest` | For example, 22.2.2-1 or 22.3.1~rc1-1. If this value is set, then the package is upgraded if the installed version is lower than what has been specified. |
-| `redpanda_rpk_opts` |  | Command line options to be passed to instances where `rpk` is used on the playbook; for example, superuser credentials can be specified as `--user myuser --password mypassword`. |
-| `redpanda_install_status` | `present` | If `redpanda_version` is set to latest, changing `redpanda_install_status` to latest causes an upgrade; otherwise, the currently-installed version remains. |
+| `redpanda_version` | `latest` | Version; for example, 22.2.2-1 or 22.3.1~rc1-1. If this value is set, then the package is upgraded if the installed version is lower than what has been specified. |
+| `redpanda_rpk_opts` |  | Command line options to be passed to instances where `rpk` is used on the playbook. For example, superuser credentials can be specified as `--user myuser --password mypassword`. |
+| `redpanda_install_status` | `present` | If `redpanda_version` is set to `latest`, then changing `redpanda_install_status` to `latest` causes an upgrade; otherwise, the currently-installed version remains. |
 | `redpanda_data_directory` | `/var/lib/redpanda/data` | Path where Redpanda keeps its data. |
 | `redpanda_key_file` | `/etc/redpanda/certs/node.key` | TLS: Path to private key. |
 | `redpanda_cert_file` | `/etc/redpanda/certs/node.crt` | TLS: Path to signed certificate. |
 | `redpanda_truststore_file` | `/etc/redpanda/certs/truststore.pem` | TLS: Path to truststore. |
-| `tls` | `false` | Set to true to configure Redpanda to use TLS. This can be set on each broker, although this may lead to errors configuring `rpk`. |
+| `tls` | `false` | Set to `true` to configure Redpanda to use TLS. This can be set on each broker, although this may lead to errors configuring `rpk`. |
 | `skip_node` |	`false`	| Node configuration to prevent the redpanda_broker role being applied to this specific broker. Use carefully when adding new brokers to avoid existing brokers from being reconfigured. |
-| `restart_node` | `false` | Node configuration to prevent Redpanda brokers from being restarted after updating. Use with care: this can cause `rpk` to be reconfigured but the broker is not restarted and therefore is in an inconsistent state. |
-| `rack` | `undefined` | Node configuration to enable rack awareness. Rack awareness is enabled cluster-wide if at least one broker has the rack variable set. |
+| `restart_node` | `false` | Node configuration to prevent Redpanda brokers from being restarted after updating. Use with care: This can cause `rpk` to be reconfigured but the broker is not restarted and therefore is in an inconsistent state. |
+| `rack` | `undefined` | Node configuration to enable rack awareness. Rack awareness is enabled cluster-wide if at least one broker has this set. |
 | `tiered_storage_bucket_name` |  | Set bucket name to enable Tiered Storage. |
 | `aws_region` |  | The region to be used if Tiered Storage is enabled. |
 
 ### Troubleshooting
 
-On Mac OS X, Python may be [unable to fork workers](https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr). If you see something like this:
+On Mac OS X, Python may be [unable to fork workers](https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr). You may see something like the following:
 
 ```bash
 ok: [34.209.26.177] => {“changed”: false, “stat”: {“exists”: false}}
