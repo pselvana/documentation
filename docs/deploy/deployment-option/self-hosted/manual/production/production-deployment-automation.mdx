@@ -157,7 +157,7 @@ This recommended automated deployment provides a production-usable way to deploy
     | `region` | The GCP region to use to deploy the infrastructure. Default: `us-west1` |
     | `zone` | The region's zone to deploy the infrastructure. Default: `a` |
     | `subnet` | The name of an existing subnet to deploy the infrastructure. |
-    | `nodes` | The number of brokers in the cluster. Keep in mind that one broker is used as a monitoring broker. Default: `1`|
+    | `nodes` | The number of brokers in the cluster. Default: `1`|
     | `disks` | The number of local disks to deploy on each machine. Default = `1`|
     | `image` | The operating system image running on the VMs. Default: `ubuntu-os-cloud/ubuntu-1804-lts` |
     | `machine_type` | The machine type. Default: `n2-standard-2`|
@@ -213,7 +213,6 @@ Under the `[redpanda]` section, replace the following:
 | `ip` | The public IP address of the machine. |
 | `ansible_user` | The username for Ansible to use to SSH to the machine. |
 | `private_ip` | The private IP address of the machine. This could be the same as the public IP address. |
-| `id` | The node ID of the Redpanda instance. This must be unique for each host. |
 
 You can add additional properties to configure features like rack awareness and Tiered Storage. 
 
