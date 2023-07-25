@@ -18,15 +18,15 @@ The following new features are included in version 23.2. For a complete list of 
 
 With this enterprise feature, records produced to a topic may use a serializer/deserializer client library, such as Confluent's SerDes library, to encode their keys and values according to a schema in Schema Registry. [Schema ID validation](../../manage/schema-id-validation) enables brokers to detect and drop records that were produced with an incorrectly configured subject name strategy, that don't conform to the SerDes wire format, or that encode an incorrect schema ID. Records associated with unregistered schemas are detected and dropped earlier, by a broker rather than a consumer. 
 
-## Tiered Storage updates
+## Tiered Storage enhancements
 
 As data in object storage grows, the metadata for it grows. To support efficient long-term data retention, Redpanda splits the metadata in object storage, storing metadata of only recently-updated segments, and safely archiving the remaining metadata in object storage and caching it locally on disk. Archived metadata can be loaded when historical data is accessed. This allows Tiered Storage to handle partitions of virtually any size.
 
 - [Fine-grained caching](../../manage/tiered-storage/#caching): To support more concurrent consumers of historical data with less local storage, Redpanda can download small chunks of remote segments from the cache directory. For example, when a client fetch request spans a subsection of a 1 GiB segment, instead of downloading the entire 1 GiB segment, Redpanda can download 16 MiB chunks that contain just enough data required to fulfill the fetch request.
 
-- [Automatic disk space management](../../manage/cluster-maintenance/disk-utilization/#local-storage-housekeeping): Redpanda now divides disk storage into different categories to provide a flexible configuration of space: reserved disk space, cache storage, and log storage. When data usage begins to approach the target size of log storage, Redpanda does local storage housekeeping to bring usage back under the target size. This allows Redpanda to leverage available local storage safely, efficiently, and automatically. 
+- [Automatic disk space management](../../manage/cluster-maintenance/disk-utilization/#local-storage-housekeeping): Redpanda now divides disk storage into different categories to provide a flexible configuration of space: reserved disk space, cache storage, and log storage. When data usage begins to approach the target size of log storage, Redpanda does local storage housekeeping to bring usage back under the target size. This allows Redpanda to leverage available local storage safely and efficiently. 
 
-- [View space usage](../../manage/tiered-storage/#view-space-usage): You can now use `rpk cluster logdirs describe` to get details about Tiered Storage space usage. The directories for object storage start with `remote://<bucket_name>`. 
+- [View space usage](../../manage/tiered-storage/#view-space-usage): You can now use `rpk cluster logdirs describe` to get details about Tiered Storage space usage. 
 
 ## Controller snapshots
 
@@ -34,13 +34,13 @@ Redpanda now loads the controller log from a snapshot on startup. [Controller sn
 
 ## Delete records from a topic​
 
-Redpanda now lets you [delete data from the beginning of a partition up to a specific offset](../../develop/config-topics/#delete-records-from-a-topic) (event). The offset represents the true creation time of the event, not the time when it was stored by Redpanda. Deleting records frees up disk space, which is especially helpful if your producers are pushing more data than you anticipated in your retention plan. There are different ways to delete records from a topic, including using the `rpk topic trim` command or using the DeleteRecords Kafka API with Kafka clients.
+Redpanda now lets you [delete data from the beginning of a partition up to a specific offset](../../develop/config-topics/#delete-records-from-a-topic). The offset represents the true creation time of the event, not the time when it was stored by Redpanda. Deleting records frees up disk space, which is especially helpful if your producers are pushing more data than you anticipated in your retention plan. There are different ways to delete records from a topic, including using the `rpk topic trim` command or using the DeleteRecords Kafka API with Kafka clients.
 
 ## Topic-aware leadership balancing
 
 The new [`leader_balancer_mode`](../../manage/cluster-maintenance/cluster-balancing/#partition-leadership-balancing) property ensures that each shard in a cluster has an equal number of partitions. It determines the movement of leadership for the replica set of a partition. As an alternative to Redpanda partition balancing, you can change partition assignments explicitly with the Kafka API or with any 3rd-party tool in the Kafka ecosystem that controls partition movement using the Kafka API.
 
-## Changes to local message retention
+## Local message retention
 
 With this release, both size-based and time-based [retention policies](../../manage/cluster-maintenance/disk-utilization/#configure-message-retention) are applied simultaneously, so it's possible for your size-based property to override your time-based property, or vice versa. For example, if your size-based property requires removing one segment, and your time-based property requires removing three segments, then three segments are removed. Size-based properties reclaim disk space as close as possible to the maximum size, without exceeding the limit. 
 
@@ -52,13 +52,12 @@ You can now [manage the throughput](../../manage/cluster-maintenance/manage-thro
 
 Redpanda offers a new approach to deploying [Redpanda in Kubernetes](../../deploy/deployment-option/self-hosted/kubernetes/kubernetes-production-deployment/). You can choose to use Helm for its simplicity, or you can combine Helm with the Redpanda Operator to leverage custom resource definitions (CRDs) for a more GitOps-friendly deployment process. Redpanda Operator is the recommended deployment option.
 
-## rpk updates
+## rpk commands
 
-
-- [`rpk profile`](../../reference/rpk/rpk-profile/): Allows users to switch between clusters seamlessly
-- [`rpk cloud login`](../../reference/rpk/rpk-cloud/rpk-cloud-login/): Allows users to connect with rpk to cloud environments by browser
-- [`rpk topic trim-prefix`](../../reference/rpk/rpk-topic/rpk-topic-trim-prefix/): Allows users to delete records from a topic.
-- [`rpk topic describe-storage`](../../reference/rpk/rpk-topic/rpk-topic-describe-storage/): Provides detailed information about storage, including local and object disk usage and time of last write to object storage.
+- [`rpk profile`](../../reference/rpk/rpk-profile/): This allows users to switch between clusters seamlessly.
+- [`rpk cloud login`](../../reference/rpk/rpk-cloud/rpk-cloud-login/): This allows users to connect to cloud environments by browser.
+- [`rpk topic trim-prefix`](../../reference/rpk/rpk-topic/rpk-topic-trim-prefix/): This allows users to delete records from a topic.
+- [`rpk topic describe-storage`](../../reference/rpk/rpk-topic/rpk-topic-describe-storage/): This provides detailed information about storage, including local and object disk usage and time of last write to object storage.
 
 ## Admin API
 
@@ -74,7 +73,4 @@ Redpanda [automated deployment](../../deploy/deployment-option/self-hosted/manua
 Redpanda Cloud releases on a continuous basis, but these features are new to this documentation.
 :::
 
-Redpanda [managed connectors](../../deploy/deployment-option/cloud/managed-connectors/) are fully-managed solutions for integrating different data systems with your real-time clusters in Redpanda Cloud. They remove the need for manually building integrations with the Kafka API or Kafka Connect, and they’re available in the Redpanda Console. The new managed connectors include:
-- MongoDB (source and sink)
-- MySQL, PostgreSQL, SQLite, SQL Server / JDBC (source and sink)
-- HTTP (source)
+Redpanda [managed connectors](../../deploy/deployment-option/cloud/managed-connectors/) are fully-managed solutions for integrating different data systems with your real-time clusters in Redpanda Cloud. They remove the need for manually building integrations with the Kafka API or Kafka Connect, and they’re available in the Redpanda Console. 
