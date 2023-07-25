@@ -1,0 +1,160 @@
+---
+title: What's New in Version 23.2
+---
+
+<head>
+    <meta name="title" content="What's New | Redpanda Docs"/>
+    <meta name="description" content="Summary of new features and updates in the release"/>
+    <link rel="canonical" href="https://docs.redpanda.com/docs/get-started/whats-new/" />
+</head>
+
+
+
+## Follower fetching
+ 
+https://docs.redpanda.com/docs/develop/consume-data/follower-fetching/ 
+
+Follower fetching lets a consumer fetch records from the closest replica of a topic partition, regardless of whether it's a leader or a follower. For a Redpanda cluster deployed across different data centers and availability zones, restricting a consumer to fetch only from the leader of a partition can incur more costs and have higher latency than fetching from a follower that is geographically closer to the consumer.
+
+minimizes cloud networking costs (multi-AZ/region), minimizes consumer read latency
+additional read throughput, can save up to 30-50% of cloud infrastructure spend
+
+## Server-side schema ID validation
+
+Server-side validation of Schema IDs encoded into the header of a record encoded by a serde client library
+https://docs.redpanda.com/docs/manage/schema-id-validation/#about-schema-id-validation 
+
+ENTERPRISE. Records produced to a topic may use a serializer/deserializer client library, such as Confluent's SerDes library, to encode their keys and values according to a schema in Schema Registry.
+
+When a client produces a record, the schema ID for the topic is encoded in the record's payload header. The schema ID must be associated with a subject and a version in the Schema Registry. That subject is determined by the subject name strategy, which maps the topic and schema onto a subject.
+
+A client may be misconfigured with either the wrong schema or the wrong subject name strategy, resulting in unexpected data on the topic. A produced record for an unregistered schema shouldn't be stored by brokers or fetched by consumers. Yet, it may not be detected or dropped until after it's been fetched and a consumer deserializes its mismatched schema ID.
+Schema ID validation enables brokers (servers) to detect and drop records that were produced with an incorrectly configured subject name strategy, that don't conform to the SerDes wire format, or encode an incorrect schema ID. With schema ID validation, records associated with unregistered schemas are detected and dropped earlier, by a broker rather than a consumer.
+
+Get value out of data quicker, less manual work, safer for consumers - less worry about errant data
+
+Flexible: validate messages against known schemas in Schema Registry, per topic
+Fast: validate based on schema ID header without deserializing message payload
+Seamless: easy migration from Confluent (supports Confluent SerDes / wire format), register schemas with explicit ID via API, better Kafka ecosystem compatibility by adding
+Google "well-known types (Protobuf)
+Confluent's Avro/Protobuf types
+Avro "Parsing Canonical Form" supports
+
+## Tiered Storage updates
+
+### Infinite retention
+
+Compressed, binary metadata that spills over into object storage. This virtually eliminates limits to historical data Redpanda can store (and read with proper cluster size).
+
+Partition manifest now is a compressed binary structure scaling to virtually infinite levels of data retention (log segments) when using object storage. Purges data from brokers’ local storage to object storage, when needed.
+
+https://docs.redpanda.com/docs/get-started/architecture/#tiered-storage 
+
+### Fine-grained caching
+
+Recalls data from object storage in smaller chunks to support more clients more efficiently, with less local storage required
+
+Tiered Storage now uses a fine-grained local disk cache using segment chunks as opposed to full segments
+
+https://docs.redpanda.com/docs/manage/tiered-storage/#caching
+
+To support more concurrent consumers of historical data with less local storage, Redpanda can download small chunks of remote segments from the cache directory. For example, when a client fetch request spans a subsection of a 1 GiB segment, instead of downloading the entire 1 GiB segment, Redpanda can download 16 MiB chunks that contain just enough data required to fulfill the fetch request.
+The paths on disk to a chunk are structured as p_chunks/{chunk_start_offset}, where p is the original path to the segment in the object storage cache. The _chunks subdirectory holds chunk files identified by the chunk start offset. These files can be reclaimed by the cache eviction process during the normal eviction path.
+
+### Automatic disk space management
+
+Purges data from local storage to cloud storage when needed
+Leverages available local storage safely, efficiently, and automatically
+
+https://docs.redpanda.com/docs/manage/cluster-maintenance/disk-utilization/#local-storage-housekeeping 
+ 
+Redpanda divides disk storage into different categories to provide a flexible configuration of space:
+
+- Reserved disk space: This overhead reservation is disk space that Redpanda does not use. As disk space used by cache storage and log storage expand to their target sizes, this provides buffer space to avoid free disk space alerts. Because SSDs that run near capacity can experience performance degradation, this provides buffer space to prevent running a device at capacity.
+- Cache storage: This is the maximum size of the disk cache used if Tiered Storage is enabled. As the cache reaches its limit, new data added to the cache removes old data from the cache.
+- Log storage: This log data reservation is the disk space used as the target maximum size for user data, as well as Redpanda internal topics, like the control log. It's generally about 70-80% of total disk space.
+
+When log data usage begins to approach the target size of log storage, Redpanda does local storage housekeeping to remove data according to an eviction policy that follows cluster-level and topic-level retention settings. When log data usage exceeds its configured target size, Redpanda selects data to remove to bring usage back under the target size. Redpanda attempts to be fair with one round-robin removal at a time of a segment across partitions that are eligible to have segments removed. Data removal occurs in each phase. As soon as storage usage falls below the target, the data removal process ends.
+
+### View space usage
+
+https://docs.redpanda.com/docs/manage/tiered-storage/#view-space-usage
+
+Use `rpk cluster logdirs describe` to get details about Tiered Storage space usage. The directories for object storage start with `remote://<bucket_name>`.
+
+## Controller snapshots
+
+Redpanda now loads the controller log from a snapshot on startup. This significantly improves startup times of nodes in long-running Redpanda clusters. Enabled on new clusters, disabled on existing clusters.
+
+https://docs.redpanda.com/docs/get-started/architecture/#controller-partition-and-snapshots
+
+Redpanda stores metadata update commands (such as creating and deleting topics or users) in a system partition called the controller partition. A new snapshot is created after each controller command is added, or, with rapid updates, after a set period of time (default is 60 seconds). Controller snapshots save the current cluster metadata state to disk, so startup is fast. For example, with a partition that has moved several times, a snapshot can restore the latest state without replaying every move command.
+
+Each broker has a snapshot file stored in the controller log directory, such as /var/lib/redpanda/data/redpanda/controller/0_0/snapshot. The controller partition is replicated by a Raft group that includes all cluster brokers, and the controller snapshot is the Raft snapshot for this group. Snapshots are hydrated when a broker joins the cluster or restarts. Controller snapshots are enabled by default only in new clusters. To enable controller snapshots in existing or upgraded clusters, contact Redpanda Support.
+
+## Delete records from a topic​
+
+https://docs.redpanda.com/docs/develop/config-topics/#delete-records-from-a-topic 
+
+Redpanda lets you delete data from the beginning of a partition up to a specific offset (event). The offset represents the true creation time of the event, not the time when it was stored by Redpanda. Deleting records frees up disk space, which is especially helpful if your producers are pushing more data than you anticipated in your retention plan. Do this when you know that all consumers have read up to that given offset, and the data is no longer needed.
+
+There are different ways to delete records from a topic, including using the rpk topic trim command or using the DeleteRecords Kafka API with Kafka clients.
+
+## Topic-aware leadership balancer
+
+https://docs.redpanda.com/docs/manage/cluster-maintenance/cluster-balancing/#partition-leadership-balancing
+
+The `leader_balancer_mode` property ensures that each shard in a cluster has an equal number of partitions. It determines the movement of leadership for the replica set of a partition. It supports two modes:
+- `random_hill_climbing`: This mode randomly searches for potential leadership movements. If one is found that better balances the number of leaders per shard and the leaders of a given topic per broker, then the movement is applied to the cluster. This is the default.
+- `greedy_balanced_shards`: This mode uses a heuristic to search for leadership movements that better balance leaders per shard. It applies any movement it finds.
+
+As an alternative to Redpanda partition balancing, you can change partition assignments explicitly with the Kafka API or with any 3rd-party tool in the Kafka ecosystem that controls partition movement using the Kafka API.
+
+## Changes to local retention behavior
+
+https://docs.redpanda.com/docs/manage/cluster-maintenance/disk-utilization/#configure-message-retention
+
+Both size-based and time-based retention policies are applied simultaneously, so it's possible for your size-based property to override your time-based property, or vice versa. For example, if your size-based property requires removing one segment, and your time-based property requires removing three segments, then three segments are removed. Size-based properties reclaim disk space as close as possible to the maximum size, without exceeding the limit.
+
+## Client throughput quotas
+
+https://docs.redpanda.com/docs/manage/cluster-maintenance/manage-throughput/
+
+Manage the throughput of Kafka traffic at the cluster level, with configurable properties that limit and protect the use of disk and network resources for individual nodes and for an entire cluster. Set node-wide throughput limits for Kafka API traffic.
+
+## Kubernetes Operator
+
+https://docs.redpanda.com/docs/deploy/deployment-option/self-hosted/kubernetes/kubernetes-production-deployment/ 
+https://docs.redpanda.com/docs/upgrade/migrate/kubernetes/helm-to-operator/ 
+
+Overhauled K8s Operator works with the Redpanda Helm chart as the recommended approach on K8s. Install/configure through Helm, day 2 management via Operator.
+
+Simplified k8s management vs Helm-only supports running on multi-tenant (shared) K8s clusters running apps other than Redpanda.
+
+Support mTLS with customer- provided client CA at HTTP Proxy and Schema Registry
+Redpanda OperatorV2 (BETA Helm-based deployment is still recommended. An upcoming patch release will deliver a GA version of the OperatorV2.
+
+To deploy Redpanda in Kubernetes, you can choose to use Helm for its simplicity, or combine Helm with the Redpanda Operator to leverage custom resource definitions (CRDs) for a more GitOps-friendly deployment process. Redpanda Operator is the recommended deployment option.
+
+## rpk updates
+
+### RPK profiles
+
+Users can manage multiple Redpanda clusters from rpk; for example, you can switch between clusters (dev/prod) from their rpk client.
+This is a shell experience that standardizes and accelerates work on multiple clusters.
+
+## Admin API
+
+https://docs.redpanda.com/docs/api/admin-api/
+
+## Automated deployment updates
+
+Simplifed deployment using automated tools like Terraform and Ansible.
+
+https://docs.redpanda.com/docs/deploy/deployment-option/self-hosted/manual/production/production-deployment-automation/
+
+## Repdanda Cloud updates
+
+https://docs.redpanda.com/docs/deploy/deployment-option/cloud/managed-connectors/
+
+Self-service experience for setting up and running managed connectors. Redpanda also supports higher throughput tiers (400 MB ingress / 800 MB egress).
