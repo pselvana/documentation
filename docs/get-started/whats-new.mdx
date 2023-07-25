@@ -26,7 +26,7 @@ As data in object storage grows, the metadata for it grows. To support efficient
 
 - [Automatic disk space management](../../manage/cluster-maintenance/disk-utilization/#local-storage-housekeeping): Redpanda now divides disk storage into different categories to provide a flexible configuration of space: reserved disk space, cache storage, and log storage. When data usage begins to approach the target size of log storage, Redpanda does local storage housekeeping to bring usage back under the target size. This allows Redpanda to leverage available local storage safely, efficiently, and automatically. 
 
-- [View space usage]((../../manage/tiered-storage/#view-space-usage)): You can now use `rpk cluster logdirs describe` to get details about Tiered Storage space usage. The directories for object storage start with `remote://<bucket_name>`. 
+- [View space usage](../../manage/tiered-storage/#view-space-usage): You can now use `rpk cluster logdirs describe` to get details about Tiered Storage space usage. The directories for object storage start with `remote://<bucket_name>`. 
 
 ## Controller snapshots
 
