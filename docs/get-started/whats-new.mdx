@@ -67,10 +67,10 @@ The [Admin API](../../api/admin-api/) for administering and managing Redpanda is
 
 Redpanda [automated deployment](../../deploy/deployment-option/self-hosted/manual/production/production-deployment-automation/) using Terraform and Ansible has been simplified and enhanced. Terraform can set up the infrastructure and output a properly-formatted `hosts.ini` file, and Ansible can use that `hosts.ini` file as input to install Redpanda. If you already have an infrastructure provisioning framework, you can supply your own hosts file (without using Terraform), and you can use Ansible to install Redpanda. For unique configurations, you can work directly with the Ansible and Terraform modules to integrate them into your environment. This provides a production-usable way to deploy and maintain a cluster.
 
-## Repdanda Cloud updates
+## Repdanda Cloud
 
 Redpanda [managed connectors](../../deploy/deployment-option/cloud/managed-connectors/) are fully-managed solutions for integrating different data systems with your real-time clusters in Redpanda Cloud. They remove the need for manually building integrations with the Kafka API or Kafka Connect, and they’re available in the Redpanda Console. 
 
 :::note
-Redpanda Cloud releases on a continuous basis, but these features are new to this documentation.
+Redpanda Cloud releases new features on a continuous basis and uptakes Redpanda platform (self-hosted) versions. 
 :::
