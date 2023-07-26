@@ -59,13 +59,9 @@ Redpanda offers a new approach to deploying [Redpanda in Kubernetes](../../deplo
 - [`rpk topic trim-prefix`](../../reference/rpk/rpk-topic/rpk-topic-trim-prefix/): This allows users to delete records from a topic.
 - [`rpk topic describe-storage`](../../reference/rpk/rpk-topic/rpk-topic-describe-storage/): This provides detailed information about storage, including local and object disk usage and time of last write to object storage.
 
-## Admin API
+## Redpanda Console TLS termination
 
-The [Admin API](../../api/admin-api/) for administering and managing Redpanda is now included in our documentation. 
-
-## Simplified automated deployment
-
-Redpanda [automated deployment](../../deploy/deployment-option/self-hosted/manual/production/production-deployment-automation/) using Terraform and Ansible has been simplified and enhanced. Terraform can set up the infrastructure and output a properly-formatted `hosts.ini` file, and Ansible can use that `hosts.ini` file as input to install Redpanda. If you already have an infrastructure provisioning framework, you can supply your own hosts file (without using Terraform), and you can use Ansible to install Redpanda. For unique configurations, you can work directly with the Ansible and Terraform modules to integrate them into your environment. This provides a production-usable way to deploy and maintain a cluster.
+To secure Redpanda Console using TLS, you can either let Redpanda Console handle TLS termination or you can offload it to an upstream component, such as a reverse proxy or a Cloud HTTPS LoadBalancer. [TLS termination](../../manage/security/console/tls-termination) refers to the process of decrypting incoming TLS-encrypted traffic. 
 
 ## Repdanda Cloud
 
@@ -74,3 +70,20 @@ Redpanda [managed connectors](../../deploy/deployment-option/cloud/managed-conne
 :::note
 Redpanda Cloud releases new features on a continuous basis and uptakes Redpanda platform (self-hosted) versions. 
 :::
+
+## New documentation
+
+The following sections are new in our documentation:
+
+- [Admin API](../../api/admin-api/)
+- [Topic configuration properties](../../reference/topic-properties)
+- [Intro to rpk](../intro-to-rpk)
+- [Benchmark Redpanda](../../develop/benchmark)
+
+## Simplified automated deployment
+
+Redpanda [automated deployment](../../deploy/deployment-option/self-hosted/manual/production/production-deployment-automation/) using Terraform and Ansible has been enhanced. Terraform can set up the infrastructure and output a properly-formatted `hosts.ini` file, and Ansible can use that `hosts.ini` file as input to install Redpanda. If you already have an infrastructure provisioning framework, you can supply your own hosts file (without using Terraform) and use Ansible to install Redpanda. For unique configurations, you can work directly with the Ansible and Terraform modules to integrate them into your environment. This provides a production-usable way to deploy and maintain a cluster.
+
+## Next steps
+
+[Upgrade Redpanda](../../manage/cluster-maintenance/rolling-upgrade)
