@@ -52,12 +52,13 @@ You can now [manage the throughput](../../manage/cluster-maintenance/manage-thro
 
 Redpanda offers a new approach to deploying [Redpanda in Kubernetes](../../deploy/deployment-option/self-hosted/kubernetes/kubernetes-production-deployment/). You can choose to use Helm for its simplicity, or you can combine Helm with the Redpanda Operator to leverage custom resource definitions (CRDs) for a more GitOps-friendly deployment process. Redpanda Operator is the recommended deployment option.
 
-## rpk commands
+## New commands and properties
 
 - [`rpk profile`](../../reference/rpk/rpk-profile/): This allows users to switch between clusters seamlessly.
 - [`rpk cloud login`](../../reference/rpk/rpk-cloud/rpk-cloud-login/): This allows users to connect to cloud environments by browser.
 - [`rpk topic trim-prefix`](../../reference/rpk/rpk-topic/rpk-topic-trim-prefix/): This allows users to delete records from a topic.
 - [`rpk topic describe-storage`](../../reference/rpk/rpk-topic/rpk-topic-describe-storage/): This provides detailed information about storage, including local and object disk usage and time of last write to object storage.
+- [Cluster support properties](../../reference/cluster-properties/#support-properties): Two new configuration flags for unsafe string checks.
 
 ## Redpanda Console TLS termination
 
@@ -71,18 +72,17 @@ Redpanda [managed connectors](../../deploy/deployment-option/cloud/managed-conne
 Redpanda Cloud releases new features on a continuous basis and uptakes Redpanda platform (self-hosted) versions. 
 :::
 
-## New documentation
+## Documentation improvements
 
-The following sections are new in our documentation:
+Although not specific to version 23.2, the following sections are new or have been significantly enhanced in the documentation:
 
 - [Admin API](../../api/admin-api/)
-- [Topic configuration properties](../../reference/topic-properties)
-- [Intro to rpk](../intro-to-rpk)
+- [Topic Configuration Properties](../../reference/topic-properties)
+- [Redpanda CLI](../intro-to-rpk)
 - [Benchmark Redpanda](../../develop/benchmark)
-
-## Simplified automated deployment
-
-Redpanda [automated deployment](../../deploy/deployment-option/self-hosted/manual/production/production-deployment-automation/) using Terraform and Ansible has been enhanced. Terraform can set up the infrastructure and output a properly-formatted `hosts.ini` file, and Ansible can use that `hosts.ini` file as input to install Redpanda. If you already have an infrastructure provisioning framework, you can supply your own hosts file (without using Terraform) and use Ansible to install Redpanda. For unique configurations, you can work directly with the Ansible and Terraform modules to integrate them into your environment. This provides a production-usable way to deploy and maintain a cluster.
+- [Automated Deployment](../../deploy/deployment-option/self-hosted/manual/production/production-deployment-automation/)
+- [Manage Topics](../../develop/config-topics)
+- Kubernetes: [Scale](../../manage/kubernetes/scale), [Decommission Brokers](../../manage/kubernetes/decommission-brokers/), [Delete PersistentVolumes](../../manage/kubernetes/delete-persistentvolume/), [Upgrade](../../manage/kubernetes/rolling-upgrade/)
 
 ## Next steps
 
