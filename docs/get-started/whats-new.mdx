@@ -12,21 +12,21 @@ The following new features are included in version 23.2. For a complete list of 
 
 ## Follower fetching
 
-[Follower fetching](../../develop/consume-data/follower-fetching) lets a consumer fetch records from the closest replica of a topic partition, regardless of whether it's a leader or a follower. This can minimize costs and consumer read latency for clusters deployed across different data centers and availability zones.
+[Follower fetching](../../develop/consume-data/follower-fetching) lets a consumer fetch records from the closest replica of a topic partition, regardless of whether it's a leader or a follower. This can minimize cloud networking costs and consumer read latency for clusters deployed across different data centers and availability zones.
 
 ## Server-side schema ID validation
 
-With this enterprise feature, records produced to a topic may use a serializer/deserializer client library, such as Confluent's SerDes library, to encode their keys and values according to a schema in Schema Registry. [Schema ID validation](../../manage/schema-id-validation) enables brokers to detect and drop records that were produced with an incorrectly configured subject name strategy, that don't conform to the SerDes wire format, or that encode an incorrect schema ID. Records associated with unregistered schemas are detected and dropped earlier, by a broker rather than a consumer. 
+With this enterprise feature, records produced to a topic may use a serializer/deserializer client library, such as Confluent's SerDes library, to encode their keys and values according to a schema in Schema Registry. [Schema ID validation](../../manage/schema-id-validation) enables brokers to detect and drop records that don't match the configured schema, as identified by the schema ID. Records associated with unregistered or incorrect schemas are thus detected and dropped earlier, by a broker rather than a downstream consumer.
 
 ## Tiered Storage enhancements
 
-As data in object storage grows, the metadata for it grows. To support efficient long-term data retention, Redpanda splits the metadata in object storage, storing metadata of only recently-updated segments, and safely archiving the remaining metadata in object storage and caching it locally on disk. Archived metadata can be loaded when historical data is accessed. This allows Tiered Storage to handle partitions of virtually any size.
+As data in object storage grows, the metadata for it grows. To support efficient long-term data retention, Redpanda splits the metadata in object storage, maintaining metadata of only recently-updated segments in memory or local disk, while safely archiving the remaining metadata in object storage and caching it locally on disk. Archived metadata is then loaded only when historical data is accessed. This allows Tiered Storage to handle partitions of virtually any size or retention length.
 
 - [Fine-grained caching](../../manage/tiered-storage/#caching): To support more concurrent consumers of historical data with less local storage, Redpanda can download small chunks of remote segments from the cache directory. For example, when a client fetch request spans a subsection of a 1 GiB segment, instead of downloading the entire 1 GiB segment, Redpanda can download 16 MiB chunks that contain just enough data required to fulfill the fetch request.
 
 - [Automatic disk space management](../../manage/cluster-maintenance/disk-utilization/#local-storage-housekeeping): Redpanda now divides disk storage into different categories to provide a flexible configuration of space: reserved disk space, cache storage, and log storage. When data usage begins to approach the target size of log storage, Redpanda does local storage housekeeping to bring usage back under the target size. This allows Redpanda to leverage available local storage safely and efficiently. 
 
-- [View space usage](../../manage/tiered-storage/#view-space-usage): You can now use `rpk cluster logdirs describe` to get details about Tiered Storage space usage. 
+- [View space usage](../../manage/tiered-storage/#view-space-usage): You can now use `rpk cluster logdirs describe` to get details about Tiered Storage space usage in both object storage and local disk.
 
 ## Controller snapshots
 
@@ -34,11 +34,11 @@ Redpanda now loads the controller log from a snapshot on startup. [Controller sn
 
 ## Delete records from a topic​
 
-Redpanda now lets you [delete data from the beginning of a partition up to a specific offset](../../develop/config-topics/#delete-records-from-a-topic). The offset represents the true creation time of the event, not the time when it was stored by Redpanda. Deleting records frees up disk space, which is especially helpful if your producers are pushing more data than you anticipated in your retention plan. There are different ways to delete records from a topic, including using the `rpk topic trim` command or using the DeleteRecords Kafka API with Kafka clients.
+Redpanda now lets you [delete data from the beginning of a partition up to a specific offset](../../develop/config-topics/#delete-records-from-a-topic). The offset represents the true creation time of the event, not the time when it was stored by Redpanda. Deleting records frees up space in local disk and in object storage, which is especially helpful if your producers are pushing more data than you anticipated when sizing your storage infrastructure, or if you want to implement a data retention policy aligned with a particular business event and not in age or size. There are different ways to delete records from a topic, including using the `rpk topic trim` command or using the DeleteRecords Kafka API with Kafka clients.
 
 ## Topic-aware leadership balancing
 
-The new [`leader_balancer_mode`](../../manage/cluster-maintenance/cluster-balancing/#partition-leadership-balancing) property ensures that each shard in a cluster has an equal number of partitions. It determines the movement of leadership for the replica set of a partition. As an alternative to Redpanda partition balancing, you can change partition assignments explicitly with the Kafka API or with any 3rd-party tool in the Kafka ecosystem that controls partition movement using the Kafka API.
+The new default [`leader_balancer_mode`](../../manage/cluster-maintenance/cluster-balancing/#partition-leadership-balancing) property ensures that each shard in a cluster is assigned an equal number of partition leaders and attempts to spread every topic's partition leaders evenly across all brokers in a cluster. 
 
 ## Local message retention
 
@@ -46,7 +46,7 @@ With this release, both size-based and time-based [retention policies](../../man
 
 ## Client throughput quotas
 
-You can now [manage the throughput](../../manage/cluster-maintenance/manage-throughput/) of Kafka traffic at the cluster level, with configurable properties that limit and protect the use of disk and network resources for individual nodes and for an entire cluster.
+You can now [manage the throughput](../../manage/cluster-maintenance/manage-throughput/#client-throughput-limits) of Kafka traffic at the cluster level, with configurable properties that limit and protect the use of disk and network resources for individual nodes and for an entire cluster.
 
 ## Kubernetes Operator
 
@@ -55,7 +55,7 @@ Redpanda offers a new approach to deploying [Redpanda in Kubernetes](../../deplo
 ## New commands and properties
 
 - [`rpk profile`](../../reference/rpk/rpk-profile/): This allows users to switch between clusters seamlessly.
-- [`rpk cloud login`](../../reference/rpk/rpk-cloud/rpk-cloud-login/): This allows users to connect to cloud environments by browser.
+- [`rpk cloud login`](../../reference/rpk/rpk-cloud/rpk-cloud-login/): This allows users to connect to cloud environments using a browser.
 - [`rpk topic trim-prefix`](../../reference/rpk/rpk-topic/rpk-topic-trim-prefix/): This allows users to delete records from a topic.
 - [`rpk topic describe-storage`](../../reference/rpk/rpk-topic/rpk-topic-describe-storage/): This provides detailed information about storage, including local and object disk usage and time of last write to object storage.
 - [Cluster support properties](../../reference/cluster-properties/#support-properties): Two new configuration flags for unsafe string checks.
