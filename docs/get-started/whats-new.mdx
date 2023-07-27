@@ -34,7 +34,7 @@ Redpanda now loads the controller log from a snapshot on startup. [Controller sn
 
 ## Delete records from a topic​
 
-Redpanda now lets you [delete data from the beginning of a partition up to a specific offset](../../develop/config-topics/#delete-records-from-a-topic). The offset represents the true creation time of the event, not the time when it was stored by Redpanda. Deleting records frees up space in local disk and in object storage, which is especially helpful if your producers are pushing more data than you anticipated when sizing your storage infrastructure, or if you want to implement a data retention policy aligned with a particular business event and not in age or size. There are different ways to delete records from a topic, including using the `rpk topic trim` command or using the DeleteRecords Kafka API with Kafka clients.
+Redpanda now lets you [delete data from the beginning of a partition up to a specific offset](../../develop/config-topics/#delete-records-from-a-topic). The offset represents the true creation time of the event, not the time when it was stored by Redpanda. Deleting records frees up space in local disk and in object storage, which is especially helpful if your producers are pushing more data than you anticipated when sizing your storage infrastructure, or if you want to implement a data retention policy aligned with a particular business event and not based on age or size. There are different ways to delete records from a topic, including using the `rpk topic trim` command or using the DeleteRecords Kafka API with Kafka clients.
 
 ## Topic-aware leadership balancing
 
@@ -58,7 +58,8 @@ Redpanda offers a new approach to deploying [Redpanda in Kubernetes](../../deplo
 - [`rpk cloud login`](../../reference/rpk/rpk-cloud/rpk-cloud-login/): This allows users to connect to cloud environments using a browser.
 - [`rpk topic trim-prefix`](../../reference/rpk/rpk-topic/rpk-topic-trim-prefix/): This allows users to delete records from a topic.
 - [`rpk topic describe-storage`](../../reference/rpk/rpk-topic/rpk-topic-describe-storage/): This provides detailed information about storage, including local and object disk usage and time of last write to object storage.
-- [Cluster support properties](../../reference/cluster-properties/#support-properties): Two new configuration flags for unsafe string checks.
+- [`legacy_permit_unsafe_log_operations`](../../reference/cluster-properties/#legacy_permit_unsafe_log_operations): Flag enabling a Redpanda cluster operator to use unsafe control characters within strings such as consumer group names or user names.
+- [`legacy_unsafe_log_warning_interval_sec`](../../reference/cluster-properties/#legacy_unsafe_log_warning_interval_sec): Period at which to log a warning about using unsafe strings containing control characters.
 
 ## Redpanda Console TLS termination
 
